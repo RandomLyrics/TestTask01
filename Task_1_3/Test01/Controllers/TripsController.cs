@@ -143,16 +143,16 @@ namespace Test01.Controllers
         [Authorize]
         public async Task<ActionResult<Trip>> DeleteTrip(int id)
         {
-            var trip = await _DB.Trips.FindAsync(id);
-            if (trip == null)
-            {
+            var t = await _DB.Trips.FindAsync(id);
+            if (t == null)
                 return NotFound();
-            }
+            if (!CanEditOrDelete(_User.UserId, t.UserId))
+                return NotFound();
 
-            _DB.Trips.Remove(trip);
+            _DB.Trips.Remove(t);
             await _DB.SaveChangesAsync();
 
-            return trip;
+            return t;
         }
 
         // MISC
