@@ -31,7 +31,6 @@ namespace Test01.Controllers
 
     [Route("api/trips")]
     [ApiController]
-    [Authorize]
     public class TripsController : ControllerBase
     {
         private readonly User _User;
