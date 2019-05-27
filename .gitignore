@@ -328,3 +328,5 @@ ASALocalRun/
 
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
+Task_1_3/Test01/appsettingsPP.json
+Task_1_3/Test01/appsettingsPP.Development.json
