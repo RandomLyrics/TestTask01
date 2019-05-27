@@ -49,10 +49,6 @@ namespace Test01.Controllers
             //    }
             //});
             //_DB.SaveChanges();
-
-            var b1 = User.IsInRole("Admin");
-            var b2 = User.IsInRole("Writer");
-            var b3 = User.IsInRole("Reader");
             return View();
         }
 
@@ -60,10 +56,6 @@ namespace Test01.Controllers
         [Authorize(Roles = "Admin,Writer")]
         public IActionResult Privacy()
         {
-            var u = User;
-            var b1 = User.IsInRole("Admin");
-            var b2 = User.IsInRole("Writer");
-            var b3 = User.IsInRole("Reader");
             return View();
         }
 
