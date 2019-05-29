@@ -59,6 +59,13 @@ namespace Test01.Controllers
             return View();
         }
 
+        [Route("waw")]
+        [AllowAnonymous]
+        public IActionResult Waw()
+        {
+            return View();
+        }
+
         [Route("error")]
         [AllowAnonymous]
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

@@ -1,0 +1,105 @@
+﻿
+@{
+    ViewData["Title"] = "Waw";
+    //Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h1>Waw</h1>
+
+<div class="row-fluid">
+    <div class="row">
+        <div class="col-6">
+            <label for="DateFrom">Data od</label>
+            <input type='text' class="form-control" id="DateFrom" />
+        </div>
+        <div class="col-6">
+            <label for="DateTo">Data do</label>
+            <input type='text' class="form-control" id="DateTo" />
+        </div>
+    </div>
+    <div class="row" style="padding:10px">
+        <div class="col-12">
+            <button type="button" class="btn btn-primary" id="btnLoad" onclick="return loadIncidents();">Zaladuj</button>
+        </div>
+    </div>
+    <div class="col-sm-12">
+        <p id="loader">Loading...</p>
+        <table cellpadding="0" cellspacing="0" border="0"
+               class="table table-striped table-bordered center-table"
+               id="tableTrips">
+            <thead>
+                <tr>
+                    <th> Dzielnica </th>
+                    <th> Podkategoria </th>
+                    <th> Zdarzenie </th>
+                    <th> Status </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="incidentsBody"></tbody>
+        </table>
+    </div>
+</div>
+
+
+<script>
+    const _DateFormatToBack = 'MM-DD-YYYY';
+    const _DateFormatPL = 'DD.MM.YYYY';
+
+    $(document).ready(function () {
+        $('#loader').hide();
+        $('#DateFrom').datetimepicker({
+            format: _DateFormatPL
+        });
+        $('#DateTo').datetimepicker({
+            format: _DateFormatPL
+        });
+    });
+
+    function validateDates(df, dt) {
+        var valid = true;
+        if (moment(dt) > moment(df)) {
+            valid = false;
+        }
+        return valid;
+    }
+
+    function loadIncidents() {
+        var dfv = $('#DateFrom').val();
+        var dtv = $('#DateTo').val();
+        var df = moment(dfv, _DateFormatPL).format(_DateFormatToBack);
+        var dt = moment(dtv, _DateFormatPL).format(_DateFormatToBack);
+        if (validateDates(df, dt)) {
+            alert('Niepoprawne daty');
+            return;
+        }
+
+        var prms = '?DateFrom=' + df + '&DateTo=' + dt;
+
+        $('#loader').show();
+        $.ajax({
+            type: 'GET',
+            url: '/api/waw/incidents' + prms,
+            contentType: "application/json;charset=UTF-8",
+            dataType: "json",
+            success: function (result) {
+                $('#loader').hide();
+                var html = '';
+                $.each(result, function (key, item) {
+                    html += '<tr>';
+                    html += '<td>' + item.district + '</td>';
+                    html += '<td>' + item.subCategory + '</td>';
+                    html += '<td>' + item.event + '</td>';
+                    html += '<td>' + item.status + '</td>';
+                    html += '</tr>';
+                });
+                $('#incidentsBody').html(html);
+            },
+            error: function (errormessage) {
+                $('#loader').hide();
+                alert(errormessage.responseText);
+            }
+        });
+    }
+
+</script>

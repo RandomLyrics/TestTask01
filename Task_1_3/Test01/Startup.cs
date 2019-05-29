@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Test01.Configs;
 using Test01.DB;
 
 namespace Test01
@@ -40,7 +41,10 @@ namespace Test01
             services.AddAuthentication(AzureADDefaults.AuthenticationScheme)
                 .AddAzureAD(options => Configuration.Bind("AzureAd", options));
 
+            services.AddOptions();
 
+            //config waw api
+            services.Configure<WawApiConfig>(Configuration.GetSection("WawApi"));
             // DB
             services.AddDbContext<TripContext>(opt 
                 => opt.UseSqlite(Configuration.GetConnectionString("TripContext")));
