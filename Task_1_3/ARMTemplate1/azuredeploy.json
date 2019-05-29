@@ -1,0 +1,102 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "ResourceGroupName": {
+      "type": "string",
+      "minLength": 1,
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "Test01planName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "Test01planSkuName": {
+      "type": "string",
+      "defaultValue": "F1",
+      "allowedValues": [
+        "F1",
+        "D1",
+        "B1",
+        "B2",
+        "B3",
+        "S1",
+        "S2",
+        "S3",
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "metadata": {
+        "description": "Describes plan's pricing tier and capacity. Check details at https://azure.microsoft.com/en-us/pricing/details/app-service/"
+      }
+    },
+    "ServiceOwner": {
+      "type": "string",
+      "minLength": 1
+    },
+    "ENVIRONMENT_TYPE": {
+      "type": "string",
+      "defaultValue": "dev",
+      "allowedValues": [ "dev", "test", "prod" ]
+    },
+    "WarsawApiUrl": {
+      "type": "string",
+      "minLength": 1
+    }
+
+  },
+  "variables": {
+    "Test01appName": "[concat('Test01app', uniqueString(resourceGroup().id))]",
+    "ENVIRONMENT_TYPE": "[parameters('ENVIRONMENT_TYPE')]",
+    "WarsawApiUrl": "[parameters('WarsawApiUrl')]"
+  },
+  "resources": [
+    {
+      "name": "[parameters('Test01planName')]",
+      "type": "Microsoft.Web/serverfarms",
+      "location": "[parameters('ResourceGroupName')]",
+      "apiVersion": "2015-08-01",
+      "sku": {
+        "name": "[parameters('Test01planSkuName')]"
+      },
+      "dependsOn": [],
+      "tags": {
+        "displayName": "Test01plan",
+        "ServiceOwner": "[parameters('ServiceOwner')]"
+      },
+      "properties": {
+        "name": "[parameters('Test01planName')]",
+        "numberOfWorkers": 1
+      }
+    },
+    {
+      "name": "[variables('Test01appName')]",
+      "type": "Microsoft.Web/sites",
+      "location": "[parameters('ResourceGroupName')]",
+      "apiVersion": "2015-08-01",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('Test01planName'))]"
+      ],
+      "tags": {
+        "[concat('hidden-related:', resourceId('Microsoft.Web/serverfarms', parameters('Test01planName')))]": "Resource",
+        "displayName": "Test01app",
+        "ServiceOwner": "[parameters('ServiceOwner')]"
+      },
+      "properties": {
+        "name": "[variables('Test01appName')]",
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('Test01planName'))]",
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "WarsawApiUrl",
+              "value": "[variables('WarsawApiUrl')]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "outputs": {}
+}
