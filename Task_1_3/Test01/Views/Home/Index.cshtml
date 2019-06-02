@@ -80,7 +80,10 @@
 </div>
 
 <script>
-    const _DateFormat = 'DD.MM.YYYY hh:mm';
+
+    // CONTEXT GLOBALS
+    const _TripsURL = "/api/trips/";
+    const _CountriesURL = "/api/trips/countries/";
 
     $(document).ready(function () {
         moment.locale('pl'); //not working
@@ -92,24 +95,117 @@
             loadTrips();
         });
     });
+    // 
 
-    // PRIVATE
-    function toDateFormat(date) {
-        //date = new Date(Date.parse(date));
-        //date = new Date(date + ' UTC');
-        //date = date.toLocaleDateString() + ' ' + date.getHours() + ':' + (date.getMinutes() < 10 ? '0' : '') + date.getMinutes();
-        //return date;
-        date = date + 'Z';
-        date = moment(date).local().format(_DateFormat);
-       // date = moment(date);//.format('DD.MM.YYYY hh:mm');
-        return date;
+    // CONTEXT API
+    // load countries
+    function loadCountries(country) {
+
+        _ajaxJson.get(_CountriesURL).done(function (result) {
+            $('#Country').val(country);
+            var options = '';
+            $.each(result, function (key, item) {
+                options += '<option value="' + item + '">' + item + '</option>';
+            });
+            $('#Country').append(options);
+        });
+    };   
+
+    //load trips
+    function loadTrips() {
+
+        _ajaxJson.get(_TripsURL).done(function (result) {
+            var html = '';
+            $.each(result, function (key, item) {
+                var date = toDateFormat(item.dateUTC);
+                html += '<tr>';
+                html += '<td>' + item.id + '</td>';
+                html += '<td>' + item.title + '</td>';
+                html += '<td>' + date + '</td>';
+                html += '<td>' + item.destination + '</td>';
+                html += '<td>' + item.country + '</td>';
+                html += '<td class="columnToHide">' + item.userId + '</td>';
+                html += getPermissionsForItem(item);
+                html += '</tr>';
+            });
+            $('#tripsBody').html(html);
+            $('.columnToHide').hide();
+        });
     }
-    function convertDateToUTC(date) {
-        //date = Date.parse(date);
-        //date = new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
-        date = moment(date, _DateFormat);
-        return date;
+
+    // get trip by id
+    function getTripByID(tripId) {
+
+        _ajaxJson.get(_TripsURL + tripId).done(function (r) {
+            loadCountries(r.country);
+            $('#Title').val(r.title);
+            $('#Destination').val(r.destination);
+            $('#Date').val(toDateFormat(r.dateUTC));
+            $('#Country').val(r.country);
+            $('#TripId').val(r.id);
+            $('#UserId').val(r.userId);
+
+            $('#tripModal').modal('show');
+            $('#btnUpdate').show();
+            $('#btnAdd').hide();
+        })
     }
+
+    // post trip
+    function addTrip() {
+
+        if (!validate()) {
+            return false;
+        }
+
+        var obj = {
+            Title: $('#Title').val(),
+            Destination: $('#Destination').val(),
+            DateUTC: convertDateToUTC($('#Date').val()),
+            Country: $('#Country').val()
+        };
+
+        _ajaxJson.post(_TripsURL, obj).done(function () {
+            loadTrips();
+            $('#tripModal').modal('hide');
+        })
+    }
+
+    // edit trip
+    function editTrip(id) {
+
+        if (!validate()) {
+            return false;
+        }
+
+        var obj = {
+            Id: $('#TripId').val(),
+            UserId: $('#UserId').val(),
+            Title: $('#Title').val(),
+            Destination: $('#Destination').val(),
+            DateUTC: convertDateToUTC($('#Date').val()),
+            Country: $('#Country').val()
+        };
+
+        _ajaxJson.put(_TripsURL, obj).done(function () {
+            loadTrips();
+            $('#tripModal').modal('hide');
+        });
+    }
+
+    // delete trip
+    function deleteTrip(id) {
+        var ans = confirm("Are you sure you want to delete this Record?");
+        if (ans) {
+            _ajaxJson.delete(_TripsURL + id).done(function () {
+                loadTrips();
+            });
+        }
+    }
+    // 
+
+    // CONTEXT METHODS
+    // permisions
     function getPermissionsForItem(item) {
         var isAdmin = @Json.Serialize(User.IsInRole("Admin"));
         var appUserId = @Json.Serialize(ViewData["AppUserId"]);
@@ -119,7 +215,10 @@
             }
         return html;
     }
+
+    // clearing
     function clearTextBox() {
+
         loadCountries();
         $('#Title').val("");
         $('#Destination').val("");
@@ -132,199 +231,30 @@
         $('#btnAdd').show();
     }
 
-    //
-
-
-
-
-    // API
-    function loadCountries(country) {
-        $.ajax({
-            url: "/api/trips/countries",
-            type: "GET",
-            contentType: "application/json;charset=utf-8",
-            dataType: "json",
-            success: function (result) {
-                $('#Country').val(country);
-                var options = '';
-                $.each(result, function (key, item) {
-                    options += '<option value="' + item + '">' + item + '</option>';
-                });
-                $('#Country').append(options);
-            },
-            error: function (errormessage) {
-                alert(errormessage.responseText);
-            }
-        });
-    };   
-
-    function loadTrips() {
-        $.ajax({
-            type: 'GET',
-            url: '/api/trips',
-            contentType: "application/json;charset=UTF-8",
-            dataType: "json",
-            success: function (result) {
-                var html = '';
-                $.each(result, function (key, item) {
-                    //if (item.id === 4)
-                    //    item.userId = 7;
-                    console.log(item);
-                    var date = toDateFormat(item.dateUTC);
-                    html += '<tr>';
-                    html += '<td>' + item.id + '</td>';
-                    html += '<td>' + item.title + '</td>';
-                    html += '<td>' + date + '</td>';
-                    html += '<td>' + item.destination + '</td>';
-                    html += '<td>' + item.country + '</td>';
-                    html += '<td class="columnToHide">' + item.userId + '</td>';
-                    html += getPermissionsForItem(item);
-                    html += '</tr>';
-                });
-                $('#tripsBody').html(html);
-                $('.columnToHide').hide();
-            },
-            error: function (errormessage) {
-                alert(errormessage.responseText);
-            }
-        });
-    }
-
-
-    function getTripByID(tripId) {
-        $.ajax({
-            url: "/api/trips/" + tripId,
-            typr: "GET",
-            contentType: "application/json;charset=UTF-8",
-            dataType: "json",
-            success: function (r) {
-                loadCountries(r.country);
-                $('#Title').val(r.title);
-                $('#Destination').val(r.destination);
-                $('#Date').val(toDateFormat(r.dateUTC));
-                $('#Country').val(r.country);
-                $('#TripId').val(r.id);
-                $('#UserId').val(r.userId);
-
-                $('#tripModal').modal('show');
-                $('#btnUpdate').show();
-                $('#btnAdd').hide();
-            },
-            error: function (errormessage) {
-                alert(errormessage.responseText);
-            }
-        });
-        return false;
-    }
-
-    function addTrip() {
-        var res = validate();
-        if (res == false) {
-            return false;
-        }
-        var obj = {
-            Title: $('#Title').val(),
-            Destination: $('#Destination').val(),
-            DateUTC: convertDateToUTC($('#Date').val()),
-            Country: $('#Country').val()
-        };
-        $.ajax({
-            url: "/api/trips",
-            data: JSON.stringify(obj),
-            type: "POST",
-            contentType: "application/json;charset=utf-8",
-            dataType: "json",
-            success: function (result) {
-                loadTrips();
-                $('#tripModal').modal('hide');
-            },
-            error: function (errormessage) {
-                alert(errormessage.responseText);
-            }
-        });
-    }
-
-    function editTrip(id) {
-        var res = validate();
-        if (res == false) {
-            return false;
-        }
-        var obj = {
-            Id: $('#TripId').val(),
-            UserId: $('#UserId').val(),
-            Title: $('#Title').val(),
-            Destination: $('#Destination').val(),
-            DateUTC: convertDateToUTC($('#Date').val()),
-            Country: $('#Country').val()
-        };
-        $.ajax({
-            url: "/api/trips",
-            data: JSON.stringify(obj),
-            type: "PUT",
-            contentType: "application/json;charset=utf-8",
-            dataType: "json",
-            success: function (result) {
-                loadTrips();
-                $('#tripModal').modal('hide');
-            },
-            error: function (errormessage) {
-                alert(errormessage.responseText);
-            }
-        });
-    }
-    function deleteTrip(id) {
-        var ans = confirm("Are you sure you want to delete this Record?");
-        if (ans) {
-            $.ajax({
-                url: "/api/trips/" + id,
-                type: "DELETE",
-                contentType: "application/json;charset=UTF-8",
-                dataType: "json",
-                success: function (result) {
-                    loadTrips();
-                },
-                error: function (errormessage) {
-                    alert(errormessage.responseText);
-                }
-            });
-        }
-    }
-
-
-
-    // VALIDATION
+    // validation
     function validate() {
+
         var isValid = true;
-        if ($('#Title').val().trim() == "") {
-            $('#Title').css('border-color', 'Red');
-            isValid = false;
-        }
-        else {
-            $('#Title').css('border-color', 'lightgrey');
-        }
-        if ($('#Destination').val().trim() == "") {
-            $('#Destination').css('border-color', 'Red');
-            isValid = false;
-        }
-        else {
-            $('#Destination').css('border-color', 'lightgrey');
-        }
-        if ($('#Date').val().trim() == "") {
-            $('#Date').css('border-color', 'Red');
-            isValid = false;
-        }
-        else {
-            $('#Date').css('border-color', 'lightgrey');
-        }
-        if ($('#Country').val().trim() == "") {
-            $('#Country').css('border-color', 'Red');
-            isValid = false;
-        }
-        else {
-            $('#Country').css('border-color', 'lightgrey');
-        }
+
+        function checkVal(sId) {
+            if ($(sId).val().trim() == "") {
+                $(sId).css('border-color', 'Red');
+                isValid = false;
+            }
+            else {
+                $(sId).css('border-color', 'lightgrey');
+            }
+        };
+
+        checkVal('#Title');
+        checkVal('#Destination');
+        checkVal('#Date');
+        checkVal('#Country');
+
         return isValid;
     }
+    //
+
 </script>
 
 

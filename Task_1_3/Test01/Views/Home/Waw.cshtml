@@ -43,9 +43,8 @@
 
 
 <script>
-    const _DateFormatToBack = 'MM-DD-YYYY';
-    const _DateFormatPL = 'DD.MM.YYYY';
 
+    // CONTEXT GLOBALS
     $(document).ready(function () {
         $('#loader').hide();
         $('#DateFrom').datetimepicker({
@@ -55,16 +54,13 @@
             format: _DateFormatPL
         });
     });
+    //
 
-    function validateDates(df, dt) {
-        var valid = true;
-        if (moment(dt) > moment(df)) {
-            valid = false;
-        }
-        return valid;
-    }
-
+    // CONTEXT API
+    // get incidents
     function loadIncidents() {
+
+        // parse parameters
         var dfv = $('#DateFrom').val();
         var dtv = $('#DateTo').val();
         var df = moment(dfv, _DateFormatPL).format(_DateFormatToBack);
@@ -74,32 +70,37 @@
             return;
         }
 
+        //declare parameters
         var prms = '?DateFrom=' + df + '&DateTo=' + dt;
 
+        //show loader
         $('#loader').show();
-        $.ajax({
-            type: 'GET',
-            url: '/api/waw/incidents' + prms,
-            contentType: "application/json;charset=UTF-8",
-            dataType: "json",
-            success: function (result) {
-                $('#loader').hide();
-                var html = '';
-                $.each(result, function (key, item) {
-                    html += '<tr>';
-                    html += '<td>' + item.district + '</td>';
-                    html += '<td>' + item.subCategory + '</td>';
-                    html += '<td>' + item.event + '</td>';
-                    html += '<td>' + item.status + '</td>';
-                    html += '</tr>';
-                });
-                $('#incidentsBody').html(html);
-            },
-            error: function (errormessage) {
-                $('#loader').hide();
-                alert(errormessage.responseText);
-            }
+
+        //send request
+        _ajaxJson.get('/api/waw/incidents' + prms).done(function (result) {
+            $('#loader').hide();
+            var html = '';
+            $.each(result, function (key, item) {
+                html += '<tr>';
+                html += '<td>' + item.district + '</td>';
+                html += '<td>' + item.subCategory + '</td>';
+                html += '<td>' + item.event + '</td>';
+                html += '<td>' + item.status + '</td>';
+                html += '</tr>';
+            });
+            $('#incidentsBody').html(html);
         });
     }
+    //
+
+    // CONTEXT PRIVATEs
+    function validateDates(df, dt) {
+        var valid = true;
+        if (moment(dt) > moment(df)) {
+            valid = false;
+        }
+        return valid;
+    }
+    //
 
 </script>
